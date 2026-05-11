@@ -1,0 +1,1127 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Ferroviario - Boletines</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --bg-card-hover: #212d45;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --border-color: #2d3a4f;
+            --gradient-1: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .header-meta span { display: flex; align-items: center; gap: 0.5rem; }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .info-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .info-card .label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .info-card .value { font-size: 1.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .info-card.blue .value { color: var(--accent-blue); }
+        .info-card.cyan .value { color: var(--accent-cyan); }
+        .info-card.purple .value { color: var(--accent-purple); }
+        .info-card.amber .value { color: var(--accent-amber); }
+
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .kpi-card.via { border-left-color: #3498db; }
+        .kpi-card.demora-de-tren { border-left-color: #f39c12; }
+        .kpi-card.desperfecto-mecanico { border-left-color: #9b59b6; }
+        .kpi-card.accidentes { border-left-color: #e74c3c; }
+        .kpi-card.sistema-operativo { border-left-color: #1abc9c; }
+        .kpi-card.otro { border-left-color: #95a5a6; }
+
+        .kpi-card .kpi-title { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text-primary); }
+        .kpi-card .kpi-percent { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.875rem 1rem; text-align: left; }
+        th { background: var(--bg-secondary); color: var(--text-secondary); font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        tr { border-bottom: 1px solid var(--border-color); }
+        tr:hover { background: var(--bg-card-hover); }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+
+        .chart-container { position: relative; height: 350px; width: 100%; }
+        .chart-container-lg { position: relative; height: 400px; width: 100%; }
+
+        .badge-alerta {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .estado-cerrado { color: #10b981; }
+        .estado-abierto { color: #ef4444; }
+        .estado-seguimiento { color: #f59e0b; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 2rem;
+        }
+
+        /* Controles del gráfico */
+        .chart-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .chart-controls select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .chart-controls select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .checkbox-item input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-blue);
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .checkbox-item .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header-content { flex-direction: column; text-align: center; }
+            .header-meta { flex-direction: column; gap: 0.5rem; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .chart-controls { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>🚂 Reporte Ferroviario - Boletines Bcyl</h1>
+            <div class="header-meta">
+                <span>📅 Período: 30/03/2025 - 30/04/2026</span>
+                <span>🕐 Generado: 11/05/2026 10:35</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="info-cards">
+            <div class="info-card blue">
+                <div class="label">Total Boletines</div>
+                <div class="value">7,205</div>
+            </div>
+            <div class="info-card cyan">
+                <div class="label">Tiempo Prom. Cierre</div>
+                <div class="value">1.9 días</div>
+            </div>
+            <div class="info-card purple">
+                <div class="label">Abiertos &gt;30 días</div>
+                <div class="value">2,738</div>
+            </div>
+            <div class="info-card amber">
+                <div class="label">Líneas Activas</div>
+                <div class="value">3</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📊 Distribución por Tipo de Boletín</h2>
+            <div class="kpi-grid">
+                
+                <div class="kpi-card via">
+                    <div class="kpi-title">Vía</div>
+                    <div class="kpi-value">1,108</div>
+                    <div class="kpi-percent">15.4%</div>
+                </div>
+                
+                <div class="kpi-card demora-de-tren">
+                    <div class="kpi-title">Demora de Tren</div>
+                    <div class="kpi-value">2,365</div>
+                    <div class="kpi-percent">32.8%</div>
+                </div>
+                
+                <div class="kpi-card desperfecto-mecanico">
+                    <div class="kpi-title">Desperfecto Mecánico</div>
+                    <div class="kpi-value">2,110</div>
+                    <div class="kpi-percent">29.3%</div>
+                </div>
+                
+                <div class="kpi-card accidentes">
+                    <div class="kpi-title">Accidentes</div>
+                    <div class="kpi-value">1,210</div>
+                    <div class="kpi-percent">16.8%</div>
+                </div>
+                
+                <div class="kpi-card sistema-operativo">
+                    <div class="kpi-title">Sistema Operativo</div>
+                    <div class="kpi-value">157</div>
+                    <div class="kpi-percent">2.2%</div>
+                </div>
+                
+                <div class="kpi-card otro">
+                    <div class="kpi-title">Otro</div>
+                    <div class="kpi-value">255</div>
+                    <div class="kpi-percent">3.5%</div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="section">
+                <h2 class="section-title">📋 Estado de Boletines</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Estado</th><th>Cantidad</th><th>Porcentaje</th></tr></thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td><span class="estado-cerrado">Cerrado</span></td>
+                                <td>4,361</td>
+                                <td>60.5%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td><span class="estado-abierto">Abierto</span></td>
+                                <td>2,306</td>
+                                <td>32.0%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td><span class="estado-seguimiento">Seguimiento</span></td>
+                                <td>538</td>
+                                <td>7.5%</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🛤️ Distribución por Línea</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Línea</th><th>Cantidad</th><th>Porcentaje</th></tr></thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>Belgrano</td>
+                                <td>3,596</td>
+                                <td>49.9%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>San Martin</td>
+                                <td>2,430</td>
+                                <td>33.7%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>Urquiza</td>
+                                <td>1,179</td>
+                                <td>16.4%</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico Tendencia Mensual -->
+        <div class="section">
+            <h2 class="section-title">📈 Tendencia Mensual por Tipo de Boletín</h2>
+            
+            <div class="chart-controls">
+                <div>
+                    <span class="filter-label">Línea: </span>
+                    <select id="lineaSelect" onchange="actualizarGraficoTendencia()">
+                        <option value="Todas">Todas las Líneas</option>
+                        <option value="Belgrano">Belgrano</option>
+                        <option value="San Martin">San Martin</option>
+                        <option value="Urquiza">Urquiza</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-group">
+                    <span class="filter-label">Mostrar: </span>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_total" checked onchange="toggleCategoria('Total')">
+                        <span class="color-dot" style="background: #ffffff;"></span>
+                        <label for="chk_total">Total</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_via" checked onchange="toggleCategoria('Vía')">
+                        <span class="color-dot" style="background: #3498db;"></span>
+                        <label for="chk_via">Vía</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_demora" checked onchange="toggleCategoria('Demora de Tren')">
+                        <span class="color-dot" style="background: #f39c12;"></span>
+                        <label for="chk_demora">Demora</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_desperfecto" checked onchange="toggleCategoria('Desperfecto Mecánico')">
+                        <span class="color-dot" style="background: #9b59b6;"></span>
+                        <label for="chk_desperfecto">Desperfecto</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_accidentes" checked onchange="toggleCategoria('Accidentes')">
+                        <span class="color-dot" style="background: #e74c3c;"></span>
+                        <label for="chk_accidentes">Accidentes</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_sistema" checked onchange="toggleCategoria('Sistema Operativo')">
+                        <span class="color-dot" style="background: #1abc9c;"></span>
+                        <label for="chk_sistema">Sistema Op.</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="chk_otro" checked onchange="toggleCategoria('Otro')">
+                        <span class="color-dot" style="background: #95a5a6;"></span>
+                        <label for="chk_otro">Otro</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="tendenciaChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico UP por Línea -->
+        <div class="section">
+            <h2 class="section-title">🏢 Distribución por UP dentro de cada Línea</h2>
+            
+            <div class="chart-controls">
+                <div>
+                    <span class="filter-label">Línea: </span>
+                    <select id="lineaUPSelect" onchange="actualizarGraficoUP()">
+                        <option value="Belgrano">Belgrano</option><option value="San Martin">San Martin</option><option value="Urquiza">Urquiza</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-container-lg">
+                <canvas id="upChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid-3">
+            <div class="section">
+                <h2 class="section-title">🏆 Top 5 UP con más Boletines</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>UP</th><th>Cantidad</th><th>%</th></tr></thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>UP Puerto</td>
+                                <td>1,084</td>
+                                <td>15.1%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>UP Santa Fe</td>
+                                <td>1,023</td>
+                                <td>14.2%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>UP Rosario</td>
+                                <td>803</td>
+                                <td>11.2%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>UP Córdoba</td>
+                                <td>655</td>
+                                <td>9.1%</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>UP Meso Norte</td>
+                                <td>627</td>
+                                <td>8.7%</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">⏱️ Tiempo Cierre por Línea</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Línea</th><th>Días Promedio</th></tr></thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>Belgrano</td>
+                                <td>3.8</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>San Martin</td>
+                                <td>1.0</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>Urquiza</td>
+                                <td>2.3</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📅 Boletines por Año</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Año</th><th>Total</th></tr></thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>2025</td>
+                                <td>5,065</td>
+                            </tr>
+                            
+                            <tr>
+                                <td>2026</td>
+                                <td>2,140</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📊 Tipo de Boletín por Línea</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Línea</th>
+                            <th>Vía</th><th>Demora de Tren</th><th>Desperfecto Mecánico</th><th>Accidentes</th><th>Sistema Operativo</th><th>Otro</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>Belgrano</td>
+                            <td>489</td><td>1,732</td><td>827</td><td>344</td><td>17</td><td>187</td>
+                            <td><strong>3,596</strong></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>San Martin</td>
+                            <td>383</td><td>214</td><td>999</td><td>682</td><td>111</td><td>41</td>
+                            <td><strong>2,430</strong></td>
+                        </tr>
+                        
+                        <tr>
+                            <td>Urquiza</td>
+                            <td>236</td><td>419</td><td>284</td><td>184</td><td>29</td><td>27</td>
+                            <td><strong>1,179</strong></td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Gráfico Estado por Mes -->
+        <div class="section">
+            <h2 class="section-title">📊 Estado de Boletines por Mes</h2>
+            
+            <div class="chart-controls">
+                <div>
+                    <span class="filter-label">Línea: </span>
+                    <select id="lineaEstadoSelect" onchange="actualizarGraficoEstado()">
+                        <option value="Todas">Todas las Líneas</option>
+                        <option value="Belgrano">Belgrano</option>
+                        <option value="San Martin">San Martin</option>
+                        <option value="Urquiza">Urquiza</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="chart-container-lg">
+                <canvas id="estadoChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">⚠️ Boletines Abiertos con más de 30 días (Top 10)</h2>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Boletín</th><th>Tipo</th><th>Línea</th><th>UP</th><th>Fecha</th><th>Días Abierto</th></tr></thead>
+                    <tbody>
+                        
+    <tr>
+        <td>46273</td>
+        <td>Demora tren</td>
+        <td>Belgrano</td>
+        <td>UP Tucumán</td>
+        <td>30/03/2025</td>
+        <td><span class="badge-alerta">407 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46292</td>
+        <td>Desperfecto mecánico</td>
+        <td>Belgrano</td>
+        <td>UP Rosario</td>
+        <td>31/03/2025</td>
+        <td><span class="badge-alerta">406 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46285</td>
+        <td>Demora tren</td>
+        <td>Belgrano</td>
+        <td>UP Rosario</td>
+        <td>30/03/2025</td>
+        <td><span class="badge-alerta">406 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46290</td>
+        <td>Desperfecto mecánico</td>
+        <td>Belgrano</td>
+        <td>UP Rosario</td>
+        <td>31/03/2025</td>
+        <td><span class="badge-alerta">406 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46276</td>
+        <td>Demora tren</td>
+        <td>Belgrano</td>
+        <td>UP Rosario</td>
+        <td>30/03/2025</td>
+        <td><span class="badge-alerta">406 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46284</td>
+        <td>Desperfecto mecánico</td>
+        <td>Belgrano</td>
+        <td>UP Rosario</td>
+        <td>30/03/2025</td>
+        <td><span class="badge-alerta">406 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46302</td>
+        <td>Desperfecto mecánico</td>
+        <td>Belgrano</td>
+        <td>UP Salta</td>
+        <td>31/03/2025</td>
+        <td><span class="badge-alerta">405 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46296</td>
+        <td>Novedad de vía</td>
+        <td>Belgrano</td>
+        <td>UP Salta</td>
+        <td>31/03/2025</td>
+        <td><span class="badge-alerta">405 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46305</td>
+        <td>Demora tren</td>
+        <td>Belgrano</td>
+        <td>UP Tucumán</td>
+        <td>01/04/2025</td>
+        <td><span class="badge-alerta">405 días</span></td>
+    </tr>
+    
+    <tr>
+        <td>46297</td>
+        <td>Demora tren</td>
+        <td>Belgrano</td>
+        <td>UP Córdoba</td>
+        <td>31/03/2025</td>
+        <td><span class="badge-alerta">405 días</span></td>
+    </tr>
+    
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Reporte mensual de Boletines | Generado por carlos amaro | camaro@bcyl.com.ar</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== DATOS ====================
+        const datosChart = {"Todas": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "categorias": {"V\u00eda": [2, 60, 63, 56, 53, 61, 50, 97, 128, 144, 130, 102, 96, 66], "Demora de Tren": [4, 158, 193, 223, 200, 189, 168, 219, 229, 196, 169, 143, 145, 129], "Desperfecto Mec\u00e1nico": [19, 150, 164, 172, 138, 149, 122, 161, 151, 160, 166, 174, 239, 145], "Accidentes": [8, 91, 109, 91, 87, 103, 99, 99, 94, 84, 77, 76, 95, 97], "Sistema Operativo": [0, 8, 10, 10, 6, 10, 16, 20, 21, 18, 8, 7, 6, 17], "Otro": [0, 35, 18, 24, 19, 26, 11, 20, 25, 24, 16, 13, 9, 15]}, "total": [33, 502, 557, 576, 503, 538, 466, 616, 648, 626, 566, 515, 590, 469]}, "Belgrano": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "categorias": {"V\u00eda": [1, 21, 30, 31, 25, 25, 14, 44, 62, 79, 61, 42, 33, 21], "Demora de Tren": [4, 112, 134, 172, 169, 161, 148, 162, 155, 142, 118, 85, 91, 79], "Desperfecto Mec\u00e1nico": [5, 59, 70, 70, 61, 77, 55, 65, 43, 55, 60, 72, 90, 45], "Accidentes": [1, 29, 34, 28, 19, 31, 28, 26, 31, 24, 20, 24, 26, 23], "Sistema Operativo": [0, 2, 1, 1, 0, 0, 1, 4, 3, 2, 0, 1, 1, 1], "Otro": [0, 26, 14, 18, 13, 20, 9, 16, 19, 16, 14, 10, 5, 7]}, "total": [11, 249, 283, 320, 287, 314, 255, 317, 313, 318, 273, 234, 246, 176]}, "San Martin": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "categorias": {"V\u00eda": [0, 18, 25, 19, 22, 18, 22, 33, 37, 39, 44, 41, 37, 28], "Demora de Tren": [0, 19, 20, 23, 15, 16, 12, 23, 14, 9, 16, 15, 21, 11], "Desperfecto Mec\u00e1nico": [12, 67, 81, 76, 62, 54, 53, 69, 89, 80, 79, 76, 119, 82], "Accidentes": [7, 47, 63, 46, 58, 58, 62, 61, 51, 42, 43, 36, 49, 59], "Sistema Operativo": [0, 6, 9, 6, 5, 9, 11, 12, 14, 12, 6, 3, 5, 13], "Otro": [0, 7, 3, 5, 5, 2, 1, 2, 0, 4, 2, 1, 2, 7]}, "total": [19, 164, 201, 175, 167, 157, 161, 200, 205, 186, 190, 172, 233, 200]}, "Urquiza": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "categorias": {"V\u00eda": [1, 21, 8, 6, 6, 18, 14, 20, 29, 26, 25, 19, 26, 17], "Demora de Tren": [0, 27, 39, 28, 16, 12, 8, 34, 60, 45, 35, 43, 33, 39], "Desperfecto Mec\u00e1nico": [2, 24, 13, 26, 15, 18, 14, 27, 19, 25, 27, 26, 30, 18], "Accidentes": [0, 15, 12, 17, 10, 14, 9, 12, 12, 18, 14, 16, 20, 15], "Sistema Operativo": [0, 0, 0, 3, 1, 1, 4, 4, 4, 4, 2, 3, 0, 3], "Otro": [0, 2, 1, 1, 1, 4, 1, 2, 6, 4, 0, 2, 2, 1]}, "total": [3, 89, 73, 81, 49, 67, 50, 99, 130, 122, 103, 109, 111, 93]}};
+        const coloresCategorias = {"V\u00eda": "#3498db", "Demora de Tren": "#f39c12", "Desperfecto Mec\u00e1nico": "#9b59b6", "Accidentes": "#e74c3c", "Sistema Operativo": "#1abc9c", "Otro": "#95a5a6"};
+        const ordenCategorias = ["V\u00eda", "Demora de Tren", "Desperfecto Mec\u00e1nico", "Accidentes", "Sistema Operativo", "Otro"];
+        const datosUP = {"Belgrano": {"ups": ["UP Santa Fe", "UP Rosario", "UP C\u00f3rdoba", "UP Salta", "UP Tucum\u00e1n", "UP Retiro"], "cantidades": [1023, 803, 655, 624, 481, 10], "porcentajes": [28.45, 22.33, 18.21, 17.35, 13.38, 0.28]}, "San Martin": {"ups": ["UP Puerto", "UP Este", "UP Centro", "UP Oeste", "UP Alianza", "UP Palermo"], "cantidades": [1084, 531, 480, 270, 55, 10], "porcentajes": [44.61, 21.85, 19.75, 11.11, 2.26, 0.41]}, "Urquiza": {"ups": ["UP Meso Norte", "UP Meso Sur"], "cantidades": [627, 552], "porcentajes": [53.18, 46.82]}};
+        const datosEstado = {"Todas": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "estados": {"Abierto": [5, 161, 173, 210, 189, 217, 181, 195, 172, 185, 176, 152, 174, 116], "Seguimiento": [4, 46, 48, 65, 39, 43, 38, 48, 21, 36, 37, 33, 40, 40], "Cerrado": [24, 295, 336, 301, 275, 278, 247, 373, 455, 405, 353, 330, 376, 313]}, "pct_cierre": [72.73, 58.76, 60.32, 52.26, 54.67, 51.67, 53.0, 60.55, 70.22, 64.7, 62.37, 64.08, 63.73, 66.74]}, "Belgrano": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "estados": {"Abierto": [5, 160, 173, 209, 189, 217, 181, 195, 165, 179, 170, 152, 169, 103], "Seguimiento": [4, 46, 48, 65, 39, 43, 38, 47, 20, 32, 37, 32, 37, 33], "Cerrado": [2, 43, 62, 46, 59, 54, 36, 75, 128, 107, 66, 50, 40, 40]}, "pct_cierre": [18.18, 17.27, 21.91, 14.37, 20.56, 17.2, 14.12, 23.66, 40.89, 33.65, 24.18, 21.37, 16.26, 22.73]}, "San Martin": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "estados": {"Abierto": [0, 0, 0, 0, 0, 0, 0, 0, 7, 5, 3, 0, 5, 11], "Seguimiento": [0, 0, 0, 0, 0, 0, 0, 1, 1, 4, 0, 0, 2, 5], "Cerrado": [19, 164, 201, 175, 167, 157, 161, 199, 197, 177, 187, 172, 226, 184]}, "pct_cierre": [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 99.5, 96.1, 95.16, 98.42, 100.0, 97.0, 92.0]}, "Urquiza": {"meses": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"], "estados": {"Abierto": [0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 3, 0, 0, 2], "Seguimiento": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2], "Cerrado": [3, 88, 73, 80, 49, 67, 50, 99, 130, 121, 100, 108, 110, 89]}, "pct_cierre": [100.0, 98.88, 100.0, 98.77, 100.0, 100.0, 100.0, 100.0, 100.0, 99.18, 97.09, 99.08, 99.1, 95.7]}};
+        const coloresEstados = {"Abierto": "#ef4444", "Seguimiento": "#f59e0b", "Cerrado": "#10b981"};
+        const ordenEstados = ["Abierto", "Seguimiento", "Cerrado"];
+        
+        // ==================== GRÁFICO TENDENCIA ====================
+        let categoriasVisibles = { 'Total': true };
+        ordenCategorias.forEach(cat => categoriasVisibles[cat] = true);
+        
+        let chartTendencia = null;
+        
+        function crearGraficoTendencia() {
+            const ctx = document.getElementById('tendenciaChart').getContext('2d');
+            const lineaSeleccionada = document.getElementById('lineaSelect').value;
+            const datos = datosChart[lineaSeleccionada];
+            
+            // Dataset para Total
+            const datasets = [{
+                label: 'Total',
+                data: datos.total,
+                borderColor: '#ffffff',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#0a0f1c',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                hidden: !categoriasVisibles['Total']
+            }];
+            
+            // Datasets para cada categoría
+            ordenCategorias.forEach(cat => {
+                datasets.push({
+                    label: cat,
+                    data: datos.categorias[cat],
+                    borderColor: coloresCategorias[cat],
+                    backgroundColor: coloresCategorias[cat] + '20',
+                    borderWidth: 2.5,
+                    fill: false,
+                    tension: 0.3,
+                    pointBackgroundColor: coloresCategorias[cat],
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    hidden: !categoriasVisibles[cat]
+                });
+            });
+            
+            if (chartTendencia) {
+                chartTendencia.destroy();
+            }
+            
+            chartTendencia = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datos.meses,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#2d3a4f',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#94a3b8', font: { family: 'Outfit' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Outfit' }, maxRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function actualizarGraficoTendencia() {
+            crearGraficoTendencia();
+        }
+        
+        function toggleCategoria(categoria) {
+            categoriasVisibles[categoria] = !categoriasVisibles[categoria];
+            crearGraficoTendencia();
+        }
+        
+        // ==================== GRÁFICO UP POR LÍNEA ====================
+        let chartUP = null;
+        
+        function crearGraficoUP() {
+            const ctx = document.getElementById('upChart').getContext('2d');
+            const lineaSeleccionada = document.getElementById('lineaUPSelect').value;
+            const datos = datosUP[lineaSeleccionada];
+            
+            if (chartUP) {
+                chartUP.destroy();
+            }
+            
+            chartUP = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.ups,
+                    datasets: [
+                        {
+                            label: 'Cantidad',
+                            data: datos.cantidades,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Porcentaje',
+                            data: datos.porcentajes,
+                            type: 'line',
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3,
+                            pointBackgroundColor: '#f59e0b',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { family: 'Outfit', size: 12 },
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#2d3a4f',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Porcentaje') {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                    }
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#3b82f6', font: { family: 'Outfit' } },
+                            title: {
+                                display: true,
+                                text: 'Cantidad',
+                                color: '#3b82f6',
+                                font: { family: 'Outfit', size: 12 }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#f59e0b',
+                                font: { family: 'Outfit' },
+                                callback: function(value) { return value + '%'; }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Porcentaje',
+                                color: '#f59e0b',
+                                font: { family: 'Outfit', size: 12 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Outfit' }, maxRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function actualizarGraficoUP() {
+            crearGraficoUP();
+        }
+        
+        // ==================== GRÁFICO ESTADO POR MES ====================
+        let chartEstado = null;
+        
+        function crearGraficoEstado() {
+            const ctx = document.getElementById('estadoChart').getContext('2d');
+            const lineaSeleccionada = document.getElementById('lineaEstadoSelect').value;
+            const datos = datosEstado[lineaSeleccionada];
+            
+            if (chartEstado) {
+                chartEstado.destroy();
+            }
+            
+            const datasets = [];
+            
+            // Barras para cada estado
+            ordenEstados.forEach(estado => {
+                datasets.push({
+                    label: estado,
+                    data: datos.estados[estado],
+                    backgroundColor: coloresEstados[estado] + 'CC',
+                    borderColor: coloresEstados[estado],
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    yAxisID: 'y'
+                });
+            });
+            
+            // Línea de % de cierre
+            datasets.push({
+                label: '% Cierre',
+                data: datos.pct_cierre,
+                type: 'line',
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.3,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                yAxisID: 'y1'
+            });
+            
+            chartEstado = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.meses,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { family: 'Outfit', size: 12 },
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#2d3a4f',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === '% Cierre') {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                    }
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            stacked: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#94a3b8', font: { family: 'Outfit' } },
+                            title: {
+                                display: true,
+                                text: 'Cantidad',
+                                color: '#94a3b8',
+                                font: { family: 'Outfit', size: 12 }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#8b5cf6',
+                                font: { family: 'Outfit' },
+                                callback: function(value) { return value + '%'; }
+                            },
+                            title: {
+                                display: true,
+                                text: '% Cierre',
+                                color: '#8b5cf6',
+                                font: { family: 'Outfit', size: 12 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'Outfit' }, maxRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function actualizarGraficoEstado() {
+            crearGraficoEstado();
+        }
+        
+        // ==================== INICIALIZAR ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            crearGraficoTendencia();
+            crearGraficoUP();
+            crearGraficoEstado();
+        });
+    </script>
+</body>
+</html>
